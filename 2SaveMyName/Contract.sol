@@ -19,7 +19,4 @@ contract SaveMyName{
     function getSomeonesName(address user) onlyOwner() public view returns(string memory)  {
         return names[user];   
     }
-    function getAllNames() onlyOwner() public view returns(mapping (address=>string)memory)  {
-        return names;
-    }
 }

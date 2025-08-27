@@ -6,7 +6,6 @@ contract SimplePollingStation {
         string name;      
         uint voteCount;
     }
-    
     Candidate[] public candidates;
 
     mapping(address => uint) public voterChoice;
@@ -19,7 +18,6 @@ contract SimplePollingStation {
         }));
     }
 
-
     function vote(uint candidateIndex) public {
         require(candidateIndex < candidates.length, "Invalid candidate index");
         require(!hasVoted[msg.sender], "You already voted!");
@@ -29,7 +27,6 @@ contract SimplePollingStation {
 
         candidates[candidateIndex].voteCount += 1;
     }
-
     
     function getCandidateCount() public view returns (uint) {
         return candidates.length;

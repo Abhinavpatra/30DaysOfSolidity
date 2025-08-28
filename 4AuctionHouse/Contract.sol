@@ -8,17 +8,87 @@ pragma solidity ^0.8.26;
 
 contract AuctionHouse{
     address public owner;
-    constructor(){
+    string public item;
+    bool ifAuctionEnded;
+    mapping(address => uint) bids;
+    uint public auctionStartTime;
+    uint public auctionEndTime;
+    uint private highestBid;
+    
+    address[] public bidders;
+    address private highestBidder;
+    
+
+
+    constructor(uint _totalTimeinSeconds, string memory _item){
+        item = _item;
         owner = msg.sender;
+        highestBidder = msg.sender;
+
+        auctionStartTime = block.timestamp;
+        auctionEndTime =  auctionStartTime + _totalTimeinSeconds;
     }
+
     modifier onlyOwner(){
-        require(owner == msg.sender);
+        require(owner == msg.sender, "Only Owner can call this");
         _;
     }
 
+// take the bid, and compare it with the last highest bid, and if higher, then update it.
+// bid must be more than 0.
+    function bid() public payable {
+        require(!isAuctionOver(),"The auction is over");
+        require(msg.value > 0,"Bid amount must be +ve");
+        require(msg.value > bids[msg.sender], "New bid must be higher than your current bid.");
+        
+        // if a bid is made, then this is added, then their address is added as a bidder.
+        if(bids[msg.sender] == 0){
+            bidders.push(msg.sender);
+        }
+
+        bids[msg.sender] = msg.value;
+        if(msg.value > highestBid){
+            highestBid = msg.value;
+            highestBidder = msg.sender;
+        } 
+    }
     function changeOwner(address newOwner) public onlyOwner() {
         owner = newOwner;
+    }   
+
+
+    // VIEWING FUNCTIONS
+    function getWinner() public view returns(address) {
+        return highestBidder;
     }
-    
-    
+
+    function getHighestBid() public view returns(uint){
+        return highestBid;
+    }
+
+    function getAllBidders() external view returns (address[] memory) {
+        return bidders;
+    }
+
+    function isAuctionOver() public view returns(bool) {
+        return (block.timestamp > auctionEndTime);
+    }
+
+
+// getting funds
+    function claimFunds() onlyOwner()public payable {
+        require(isAuctionOver(), "Auction has not ended");
+        
+        payable(owner).transfer(highestBid);
+        highestBid = 0;
+    }
+
+    function withdraw() external{
+        require(isAuctionOver(), "Auction not yet ended");
+        uint amount = bids[msg.sender];
+        require(msg.sender != highestBidder, "Winner cannot withdraw");
+
+        bids[msg.sender] = 0; // prevent reentrancy
+        payable(msg.sender).transfer(amount);
+    }
 }

@@ -35,16 +35,15 @@ contract AuctionHouse{
     function bid() public payable {
         require(!isAuctionOver(),"The auction is over");
         require(msg.value > 0,"Bid amount must be +ve");
-        require(msg.value > bids[msg.sender], "New bid must be higher than your current bid.");
-        
+        require(bids[msg.sender] + msg.value > highestBid, "New cumulative bid must be higher than the current highest bid.");
+
         // if a bid is made, then this is added, then their address is added as a bidder.
         if(bids[msg.sender] == 0){
             bidders.push(msg.sender);
         }
-
-        bids[msg.sender] = msg.value;
-        if(msg.value > highestBid){
-            highestBid = msg.value;
+        bids[msg.sender] += msg.value;
+        if( bids[msg.sender] > highestBid){
+            highestBid = bids[msg.sender];
             highestBidder = msg.sender;
         } 
     }
@@ -72,12 +71,18 @@ contract AuctionHouse{
 
 // getting funds
     function claimFunds() public onlyOwner {
+        
         require(isAuctionOver(), "Auction has not ended");
         require(highestBid > 0,"No funds to claim ");
         uint amount = highestBid;
         bids[highestBidder] = 0;
         highestBid = 0;
         payable(owner).transfer(amount);
+        for(uint i = 0; i < bidders.length;i++){
+            payable(bidders[i]).transfer(bids[bidders[i]]);
+            bids[bidders[i]] = 0;
+            bidders[i] = address(0);
+        }
     }
 
     function withdraw() external{

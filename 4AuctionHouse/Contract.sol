@@ -3,13 +3,11 @@ pragma solidity ^0.8.26;
 
 /**
  * Your task is to develop a Solidity smart contract for a basic auction system. The contract should allow a single owner to create an auction for a specific item, accept bids from multiple participants, and determine the winner after the auction has concluded.
- * 
  */
 
 contract AuctionHouse{
     address public owner;
     string public item;
-    bool ifAuctionEnded;
     mapping(address => uint) bids;
     uint public auctionStartTime;
     uint public auctionEndTime;
@@ -17,13 +15,11 @@ contract AuctionHouse{
     
     address[] public bidders;
     address private highestBidder;
-    
-
 
     constructor(uint _totalTimeinSeconds, string memory _item){
         item = _item;
         owner = msg.sender;
-        highestBidder = msg.sender;
+        highestBidder = address(0);
 
         auctionStartTime = block.timestamp;
         auctionEndTime =  auctionStartTime + _totalTimeinSeconds;
@@ -52,10 +48,10 @@ contract AuctionHouse{
             highestBidder = msg.sender;
         } 
     }
+
     function changeOwner(address newOwner) public onlyOwner() {
         owner = newOwner;
     }   
-
 
     // VIEWING FUNCTIONS
     function getWinner() public view returns(address) {
@@ -74,13 +70,14 @@ contract AuctionHouse{
         return (block.timestamp > auctionEndTime);
     }
 
-
 // getting funds
-    function claimFunds() onlyOwner()public payable {
+    function claimFunds() public onlyOwner {
         require(isAuctionOver(), "Auction has not ended");
-        
-        payable(owner).transfer(highestBid);
+        require(highestBid > 0,"No funds to claim ");
+        uint amount = highestBid;
+        bids[highestBidder] = 0;
         highestBid = 0;
+        payable(owner).transfer(amount);
     }
 
     function withdraw() external{

@@ -63,6 +63,7 @@ contract IOUContract {
         require(success, "Transfer failed");
     }
 
+
     function withdraw( uint _amount) public onlyRegistered(){
         require(balances[msg.sender] >= _amount);
         balances[msg.sender] -= _amount;

@@ -9,19 +9,19 @@ contract TipJar{
     address public owner;
     uint totalTip;
 // how many WEI equals to 1 of this currency
-    mapping(string => Currency) public currencyRateAndCheck;
+    mapping(bytes32 => Currency) public currencyRateAndCheck;
     
 // calculates total number of people who contributed    
     uint totalContributions;
 
 // stores total tips per currency
-    mapping(string => uint) totalTipsPerCurrency;
+    mapping(bytes32 => uint) totalTipsPerCurrency;
 
 // all the currency strings
-    string[] public currencies;
+    bytes32[] public currencies;
 
     modifier onlyOwner{
-        require(owner == msg.sender, "Only owner is allowed, and you are not the Owner.");
+        require(owner == msg.sender, "Only owner is allowed. ");
         _;
     }
 
@@ -40,7 +40,7 @@ contract TipJar{
     }
     
 
-    function addCurrency(string memory _newCurrencyName, uint rateForWei) public onlyOwner() {
+    function addCurrency(bytes32  _newCurrencyName, uint rateForWei) public onlyOwner() {
         //checks that rate is apt, and that currencyRateAndCheck mapping does not have it
         // how many WEI equals to 1 of this currency
         require(rateForWei > 0, "The rate must be more than 0 ");
@@ -48,52 +48,65 @@ contract TipJar{
         
         currencyRateAndCheck[_newCurrencyName] = Currency(rateForWei, true);
         currencies.push(_newCurrencyName);
+
     }
 
-    function convertToEth(uint _amount, string memory _currencyCode) public view returns(uint) {
+    function convertToWei(uint _amount, bytes32  _currencyCode ) public view returns(uint) {
         require(currencyRateAndCheck[_currencyCode].exists,"This currency code does not exist and can't be converted");
-        uint value = _amount * currencyRateAndCheck[_currencyCode].rate;
-        return value;
+        uint valueInWei = _amount * currencyRateAndCheck[_currencyCode].rate;
+        return valueInWei;
         
     }
 
-    function sendTip(string memory _currencyCode, uint _tip) public {
-// add to total tips, add to totalTips of that currency, 
-        Currency memory _currency = currencyRateAndCheck[_currencyCode];
+    function handleTips(bytes32  _currencyCode, uint _tip) public payable {
+        uint tipInWei = convertToWei(_tip, _currencyCode);
+        require((msg.value) == tipInWei);
+        require(tipInWei > 0, "Tip must be more than 0");
+        require(currencyRateAndCheck[_currencyCode].exists,"This currency code does not exist and can't be converted");
+// add to total tips, add to totalTips of that currency,
+
         totalTipsPerCurrency[_currencyCode] += _tip;
-        totalTip += _currency.rate * _tip;
+        totalTip += tipInWei;
         totalContributions++;
 
     }
-    function sendEth() external payable{
-        totalTipsPerCurrency["ETH"] += msg.value;
-        totalTip +=msg.value;
+    function sendEth() public payable{
+        totalTipsPerCurrency["ETH"] += msg.value ;
+        totalTip += msg.value ;
         totalContributions++;
     }
 
 
     function withdrawTips() public onlyOwner(){
-        address payable _to = payable(owner);
-        _to.transfer(address(this).balance);
 
+       (bool success, ) = owner.call{value: address(this).balance}("");
+        require(success, "Withdraw failed");
+        for(uint i=0; i<currencies.length; i++){
+            totalTipsPerCurrency[currencies[i]] = 0;
+        }
+        totalTip = 0;
     }
 
-    function currenciesAvailable() public view returns(string[] memory) {
+    function currenciesAvailable() public view returns(bytes32 [] memory) {
         return currencies;
         
     }
 
-    function getBalance() public view onlyOwner()  returns(uint){
+    function getBalance() public view returns(uint){
         return totalTip;
     }
 
-    function getConversionRate(string memory _currencyCode) public view returns(uint){
+    function getConversionRate(bytes32 _currencyCode) public view returns(uint){
         return currencyRateAndCheck[_currencyCode].rate;
         
     }
 
-    function changeConversionRate(string memory _currencyCode, uint _newRate) public onlyOwner() {
+    function changeConversionRate(bytes32  _currencyCode, uint _newRate) public onlyOwner() {
+        require(_newRate > 0,"Rate must be positive");
         currencyRateAndCheck[_currencyCode].rate = _newRate;
+    }
+    receive() external payable {
+        sendEth();
     }
     
 }

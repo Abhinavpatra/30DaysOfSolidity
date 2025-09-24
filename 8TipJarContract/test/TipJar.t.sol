@@ -8,6 +8,8 @@ contract TipJarTest is Test {
     TipJar jar;
     address owner;
     address user = address(1);
+    //  this to allow the test contract to receive ETH
+    receive() external payable {}
 
     function setUp() public {
         owner = address(this);
@@ -27,7 +29,8 @@ contract TipJarTest is Test {
 
     function testHandleTipETH() public {
         uint tipAmount = 1 ether;
-        jar.handleTips("ETH", 1 ether);
+        vm.deal(address(this), tipAmount);  // Fund the test contract
+        jar.handleTips{value: tipAmount}("ETH", 1);  // Change _tip to 1 (one ETH unit)
         assertEq(jar.getBalance(), tipAmount);
     }
 
@@ -42,6 +45,7 @@ contract TipJarTest is Test {
 
     function testWithdrawTips() public {
         uint tipAmount = 1 ether;
+        vm.deal(address(this), tipAmount);  // Fund the test contract
         jar.sendEth{value: tipAmount}();
         uint balanceBefore = address(this).balance;
         jar.withdrawTips();

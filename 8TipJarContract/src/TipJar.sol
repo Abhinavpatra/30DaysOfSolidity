@@ -38,7 +38,6 @@ contract TipJar{
 
         owner = _newOwner;
     }
-    
 
     function addCurrency(bytes32  _newCurrencyName, uint rateForWei) public onlyOwner() {
         //checks that rate is apt, and that currencyRateAndCheck mapping does not have it
@@ -48,14 +47,12 @@ contract TipJar{
         
         currencyRateAndCheck[_newCurrencyName] = Currency(rateForWei, true);
         currencies.push(_newCurrencyName);
-
     }
 
     function convertToWei(uint _amount, bytes32  _currencyCode ) public view returns(uint) {
         require(currencyRateAndCheck[_currencyCode].exists,"This currency code does not exist and can't be converted");
         uint valueInWei = _amount * currencyRateAndCheck[_currencyCode].rate;
         return valueInWei;
-        
     }
 
     function handleTips(bytes32  _currencyCode, uint _tip) public payable {
@@ -68,14 +65,12 @@ contract TipJar{
         totalTipsPerCurrency[_currencyCode] += _tip;
         totalTip += tipInWei;
         totalContributions++;
-
     }
     function sendEth() public payable{
         totalTipsPerCurrency["ETH"] += msg.value ;
         totalTip += msg.value ;
         totalContributions++;
     }
-
 
     function withdrawTips() public onlyOwner(){
 
@@ -107,7 +102,7 @@ contract TipJar{
     }
     receive() external payable {
         sendEth();
-    }
+    }    
     
 }
 

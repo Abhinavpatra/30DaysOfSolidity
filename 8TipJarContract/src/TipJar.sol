@@ -66,6 +66,7 @@ contract TipJar{
         totalTip += tipInWei;
         totalContributions++;
     }
+
     function sendEth() public payable{
         totalTipsPerCurrency["ETH"] += msg.value ;
         totalTip += msg.value ;
@@ -73,11 +74,12 @@ contract TipJar{
     }
 
     function withdrawTips() public onlyOwner(){
-
+ 
        (bool success, ) = owner.call{value: address(this).balance}("");
         require(success, "Withdraw failed");
         for(uint i=0; i<currencies.length; i++){
             totalTipsPerCurrency[currencies[i]] = 0;
+
         }
         totalTip = 0;
     }

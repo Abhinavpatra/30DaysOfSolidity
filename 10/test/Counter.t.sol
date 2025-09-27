@@ -2,15 +2,13 @@
 pragma solidity ^0.8.13;
 
 import {Test} from "forge-std/Test.sol";
-import {SmartCalculator} from "../src/SmartCalculator.sol";
+import {Counter} from "../src/Counter.sol";
 
 contract CounterTest is Test {
-    SmartCalculator public counter;
-// just put this in every test
-    receive() external payable {}
+    Counter public counter;
 
     function setUp() public {
-        counter = new SmartCalculator();
+        counter = new Counter();
         counter.setNumber(0);
     }
 
